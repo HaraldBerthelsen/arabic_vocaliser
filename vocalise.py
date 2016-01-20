@@ -527,7 +527,7 @@ def cleanOutput(srilm_diacritics):
 
     #For punctuation
     #sys.stderr.write("BEFORE: "+output+"\n")
-    output = re.sub("unk<.+>", ",", output)
+    output = re.sub("unk<[^>]+>", ",", output)
     output = re.sub("unk", ",", output)
 
 
