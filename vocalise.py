@@ -6,7 +6,7 @@ def preprocessBeforeBama(ar_text):
     return ar_text
 
 def runBama(ar_text):
-    #Has to be windows-1256 for BAMA
+    #Has to be windows-1256 for BAMA?
     outfh = codecs.open("ptemp0.txt","w","windows-1256")
     outfh.write(ar_text)
     outfh.close()
