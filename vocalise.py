@@ -233,13 +233,14 @@ def filterBamaWithTags(bama_pos, srilm_pos):
 
 
                 #If it's a definite noun
+                sun_letters = "tTdDsSzZlrn\$\*"
                 if "ND" in pos:
                     #can there be an l before the def art l? preposition!
 
-                    if re.search("^([^l]+)l([tTdDsSlrn])(.+)$", voc):
+                    if re.search("^([^l]+)l(["+sun_letters+"])(.+)$", voc):
                         #def.art + sun letter
                         #AlTifol -> AlT~ifol
-                        newVoc = re.sub("^([^l]+)l([tTdDsSzZ$lrn])(.+)$", r"\1l\2~\3", voc)
+                        newVoc = re.sub("^([^l]+)l(["+sun_letters+"])(.+)$", r"\1l\2~\3", voc)
                         sys.stderr.write("newVoc (sun): "+newVoc+"\n")
                     else:
                         #def.art + moon letter
