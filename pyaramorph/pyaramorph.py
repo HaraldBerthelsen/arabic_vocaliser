@@ -193,7 +193,8 @@ class Analyzer:
         p_iy = re.compile('iy~$')
 
         infile = open(file, 'r')
-        self.out.write("loading %s ... " % (file))
+        #self.out.write("loading %s ... " % (file))
+        self.err.write("loading %s ... " % (file))
 
         for line in infile:
             if line.startswith(';; '): # a new lemma
@@ -254,10 +255,10 @@ class Analyzer:
 
         infile.close()
         if not lemmaID == "":
-            self.out.write(
+            self.err.write(
                 "loaded %d lemmas and %d entries\n" % (lemmas, entries))
         else:
-            self.out.write("loaded %d entries\n" % (entries))
+            self.err.write("loaded %d entries\n" % (entries))
         return dict
 
     def LoadTable(self, file):

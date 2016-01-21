@@ -26,7 +26,7 @@ def runPyBama(ar_text):
         bw_word = ar2bw(ar_word)
 
         results = pyaramorph.analyze(bw_word)
-        print "RESULTS FOR %s: %s" % (bw_word, results)
+        #print "RESULTS FOR %s: %s" % (bw_word, results)
         if len(results) > 0:
             for res in results:
                 res_lines = res.split("\n")
