@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 import sys, codecs, os, re
-
+from pyaramorph.pyaramorph import Analyzer
+pyaramorph = Analyzer()
 
 def preprocessBeforeBama(ar_text):
     return ar_text
@@ -17,6 +18,24 @@ def runBama(ar_text):
     bama_pos = infh.read().strip()
     infh.close()
 
+    return bama_pos
+
+def runPyBama(ar_text):
+    bama_pos_list = []
+    for ar_word in ar_text.split(" "):
+        bw_word = ar2bw(ar_word)
+
+        results = pyaramorph.analyze(bw_word)
+        print "RESULTS FOR %s: %s" % (bw_word, results)
+        if len(results) > 0:
+            for res in results:
+                res_lines = res.split("\n")
+                pos_line = res_lines[1].strip()
+                pos_line = re.sub("pos:\s+", "", pos_line)
+                bama_pos_list.append(pos_line)
+        bama_pos_list.append("") #word separator!
+
+    bama_pos = "\n".join(bama_pos_list)
     return bama_pos
 
 def convertBamaToSrilm(bama_pos):
@@ -296,62 +315,75 @@ def filterBamaWithTags(bama_pos, srilm_pos):
     return "\n".join(res).strip()
 
 
-def bw2ar(bw):
-    transliterate = {}
 
-    transliterate["'"] = "ء"
-    transliterate["|"] = "آ"
-    transliterate[">"] = "أ"
-    transliterate["&"] = "ؤ"
-    transliterate["<"] = "إ"
-    transliterate["}"] = "ئ"
-    transliterate["A"] = "ا"
-    transliterate["b"] = "ب"
-    transliterate["p"] = "ة"
-    transliterate["t"] = "ت"
-    transliterate["v"] = "ث"
-    transliterate["j"] = "ج"
-    transliterate["H"] = "ح"
-    transliterate["x"] = "خ"
-    transliterate["d"] = "د"
-    transliterate["*"] = "ذ"
-    transliterate["r"] = "ر"
-    transliterate["z"] = "ز"
-    transliterate["s"] = "س"
-    transliterate["$"] = "ش"
-    transliterate["S"] = "ص"
-    transliterate["D"] = "ض"
-    transliterate["T"] = "ط"
-    transliterate["Z"] = "ظ"
-    transliterate["E"] = "ع"
-    transliterate["g"] = "غ"
-    transliterate["f"] = "ف"
-    transliterate["q"] = "ق"
-    transliterate["k"] = "ك"
-    transliterate["l"] = "ل"
-    transliterate["m"] = "م"
-    transliterate["n"] = "ن"
-    transliterate["h"] = "ه"
-    transliterate["w"] = "و"
-    transliterate["Y"] = "ى"
-    transliterate["y"] = "ي"
-    transliterate["P"] = "ب"
-    transliterate["J"] = "ج"
-    transliterate["V"] = "ف"
-    transliterate["G"] = "ق"
-    
-    transliterate["{"] = "ا" #//letter hamza al wasel
-    transliterate["_"] = ""#//not a letter
-    
-    transliterate["F"] = "ً" #an
-    transliterate["N"] = "ٌ" #un
-    transliterate["K"] = "ٍ" #in
-    #transliterate["a"] = "َ " #a (broken)
-    transliterate["a"] = "َ" #a 
-    transliterate["u"] = "ُ" #u
-    transliterate["i"] = "ِ" #i
-    transliterate["~"] = "ّ" #
-    transliterate["o"] = "ْ" #
+transliterate = {}
+
+transliterate["'"] = u"ء"
+transliterate["|"] = u"آ"
+transliterate[">"] = u"أ"
+transliterate["&"] = u"ؤ"
+transliterate["<"] = u"إ"
+transliterate["}"] = u"ئ"
+transliterate["A"] = u"ا"
+transliterate["b"] = u"ب"
+transliterate["p"] = u"ة"
+transliterate["t"] = u"ت"
+transliterate["v"] = u"ث"
+transliterate["j"] = u"ج"
+transliterate["H"] = u"ح"
+transliterate["x"] = u"خ"
+transliterate["d"] = u"د"
+transliterate["*"] = u"ذ"
+transliterate["r"] = u"ر"
+transliterate["z"] = u"ز"
+transliterate["s"] = u"س"
+transliterate["$"] = u"ش"
+transliterate["S"] = u"ص"
+transliterate["D"] = u"ض"
+transliterate["T"] = u"ط"
+transliterate["Z"] = u"ظ"
+transliterate["E"] = u"ع"
+transliterate["g"] = u"غ"
+transliterate["f"] = u"ف"
+transliterate["q"] = u"ق"
+transliterate["k"] = u"ك"
+transliterate["l"] = u"ل"
+transliterate["m"] = u"م"
+transliterate["n"] = u"ن"
+transliterate["h"] = u"ه"
+transliterate["w"] = u"و"
+transliterate["Y"] = u"ى"
+transliterate["y"] = u"ي"
+transliterate["P"] = u"ب"
+transliterate["J"] = u"ج"
+transliterate["V"] = u"ف"
+transliterate["G"] = u"ق"
+
+#transliterate["{"] = u"ا" #//letter hamza al wasel
+transliterate["_"] = u""#//not a letter
+
+transliterate["F"] = u"ً" #an
+transliterate["N"] = u"ٌ" #un
+transliterate["K"] = u"ٍ" #in
+#transliterate["a"] = u"َ " #a (broken)
+transliterate["a"] = u"َ" #a 
+transliterate["u"] = u"ُ" #u
+transliterate["i"] = u"ِ" #i
+transliterate["~"] = u"ّ" #
+transliterate["o"] = u"ْ" #
+
+ar2bw_map = {}
+for bw in transliterate.keys():
+    ar = transliterate[bw]
+    #print "%s -> %s" % (ar, bw)
+    ar2bw_map[ar] = bw
+
+
+if u"ك" not in ar2bw_map:
+    print "aaaaaaaaaaaaaaaaaaaaaaaaa"
+    sys.exit()
+
+def bw2ar(bw):
 
     ar_list = []
     for c in bw:
@@ -361,8 +393,21 @@ def bw2ar(bw):
             sys.stderr.write("WARNING: bw2ar %s not found, replacing with comma\n" % c)
             ar_list.append(",")
     ar = "".join(ar_list)
-    sys.stderr.write("bw2ar: %s -> %s\n" % (bw,ar))
+    #sys.stderr.write("bw2ar: %s -> %s\n" % (bw,ar))
     return ar
+
+
+def ar2bw(ar):
+    bw_list = []
+    for c in ar:
+        if c in ar2bw_map:
+            bw_list.append(ar2bw_map[c])
+        else:
+            sys.stderr.write("WARNING: ar2bw %s not found\n" % c)
+    bw = "".join(bw_list)
+    #sys.stderr.write("ar2bw: %s -> %s\n" % (ar,bw))
+    return bw
+
 
 def createBAMAMap(bama_filtered):
 
@@ -481,7 +526,7 @@ def createBAMAMap(bama_filtered):
 
     res.append("</s> *noevent*")
 
-    outfh = codecs.open("ptemp7.txt","w")
+    outfh = codecs.open("ptemp7.txt","w", "utf-8")
     outfh.write("\n".join(res))
     outfh.close()
 
@@ -496,7 +541,7 @@ def createBAMAMap(bama_filtered):
     
 
 def runSRILMdiacritics(bama_map):
-    outfh = codecs.open("ptemp7.txt","w")
+    outfh = codecs.open("ptemp7.txt","w", "utf-8")
     outfh.write(bama_map)
     outfh.close()
 
@@ -555,10 +600,14 @@ def vocalise(ar_text):
     # aramorph.sh temp0.txt temp1.txt
 
     ar_text = preprocessBeforeBama(ar_text)
-    bama_pos = runBama(ar_text)
+    #bama_pos = runBama(ar_text)
+    bama_pos = runPyBama(ar_text)
     sys.stderr.write("------BAMA output-----\n")
     sys.stderr.write(bama_pos)
     sys.stderr.write("\n----------------------\n")
+
+
+    #sys.exit()
 
 
     # 2a) convert format for srilm > temp2.txt
@@ -630,7 +679,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "server":
 else:
     #ar_text = u"كتب الطفل الوظيفة"
     #ar_text = sys.stdin.read()
-    ar_text = codecs.getreader("utf-8")(sys.stdin).read()
+    ar_text = codecs.getreader("utf-8")(sys.stdin).read().strip()
     vocalised = vocalise(ar_text)
     print vocalised
 

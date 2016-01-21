@@ -27,9 +27,9 @@ import re
 import buck
 
 # Data file paths
-TABLE_AB = "tableAB"
-TABLE_BC = "tableBC"
-TABLE_AC = "tableAC"
+TABLE_AB = "pyaramorph/tableAB"
+TABLE_BC = "pyaramorph/tableBC"
+TABLE_AC = "pyaramorph/tableAC"
 
 class Analyzer:
 
@@ -42,9 +42,9 @@ class Analyzer:
         self.tableBC = self.LoadTable(TABLE_BC)
         self.tableAC = self.LoadTable(TABLE_AC)
 
-        self.prefixes = self.LoadDict("dictPrefixes")
-        self.stems = self.LoadDict("dictStems")
-        self.suffixes = self.LoadDict("dictSuffixes")
+        self.prefixes = self.LoadDict("pyaramorph/dictPrefixes")
+        self.stems = self.LoadDict("pyaramorph/dictStems")
+        self.suffixes = self.LoadDict("pyaramorph/dictSuffixes")
 
     def Process(self, str):
         """ Extract Arabic words from the given text and analyze them
@@ -70,6 +70,29 @@ class Analyzer:
                 if len(solutions) > 0:
                     results += solutions
 
+        if len(results) > 0:
+            for sol in results:
+                self.out.write(sol)
+                self.out.write('\n')
+
+    #HB 160121 
+    #Split Analyze into analyse and print_analysis
+    def analyze(self, word):
+        """ Find possible solutions for the given word """
+        results = []
+        count = 0
+        segments = self.Segment(word)
+
+        for (prefix, stem, suffix) in segments:
+            if self.prefixes.has_key(prefix) \
+                    and self.stems.has_key(stem) \
+                    and self.suffixes.has_key(suffix):
+                solutions = self.CheckSegment(prefix, stem, suffix)
+                if len(solutions) > 0:
+                    results += solutions
+        return results
+
+    def print_analysis(results):
         if len(results) > 0:
             for sol in results:
                 self.out.write(sol)

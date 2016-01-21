@@ -1,22 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import pyaramorph
+from pyaramorph.pyaramorph import Analyzer
+morph = Analyzer()
 
-def run_pyaramorph(ar):
-    proc.stdin.write(ar.encode("windows-1256"))
-    proc.stdin.write("\n")
-    #res = proc.stdout.readline()
-    res = proc.stdout.read()
-    print "res:", res
-    return res
-
+def run_pyaramorph(bw):
+    return morph.analyze(bw)
    
 
 
-ar_list = [u"كتب", u"كتب", u"كتب"]
+#bw_list = ["ktb", "ktAbA", "fy", "Almktb"]
+bw_list = ["ktb", "AlTfl", "AlwZyfp"]
 
-for ar in ar_list:
-    print run_aramorph(ar)
+for bw in bw_list:
+    result = run_pyaramorph(bw)
+    for line in result:
+        print line
     print "---------------------"
 
 
