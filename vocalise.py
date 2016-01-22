@@ -90,11 +90,18 @@ def convertBamaToSrilm(bama_pos):
 
                 tagList = convertBAMAtag(options)
 
+                #If there are no tags, i.e unknown word
+                if len(tagList) == 0:
+                    tagList = ["P", "T", "NDG", "NDA", "NDN", "NUG", "NUA", "NUN", "P+NDG", "P+NUG", "VIM", "VPR", "VIJ", "VIS", "VID"]
+
                 optionsList = []
                 for tag in tagList:
                     #Todo higher probability in case of TT and P
                     optionsString = "%s %.6f" % (tag, 1.0/len(tagList))
                     optionsList.append(optionsString)
+
+                    
+
 
                 result.append("w %s\n" % " ".join(optionsList))
             result.append("</s> *noevent*\n")
@@ -418,6 +425,7 @@ for bw in transliterate.keys():
     #print "%s -> %s" % (ar, bw)
     ar2bw_map[ar] = bw
 
+#?? ar2bw_map["."] = "."
 
 if u"ك" not in ar2bw_map:
     print "aaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -656,9 +664,9 @@ def vocalise(ar_text):
     # 2b) removeSentenceBoundaries > temp3.txt
     
     srilm_pos = convertBamaToSrilm(bama_pos)
-    #sys.stderr.write("-----SRILM input------\n")
-    #sys.stderr.write(srilm_pos)
-    #sys.stderr.write("\n----------------------\n")
+    sys.stderr.write("-----SRILM input------\n")
+    sys.stderr.write(srilm_pos)
+    sys.stderr.write("\n----------------------\n")
     
     srilm_pos = runSRILM(srilm_pos)
     #sys.stderr.write("-----SRILM output-----\n")
@@ -666,9 +674,9 @@ def vocalise(ar_text):
     #sys.stderr.write("\n----------------------\n")
     
     srilm_pos = removeSentenceBoundaries(srilm_pos)
-    #sys.stderr.write("-----SRILM output-----\n")
-    #sys.stderr.write(srilm_pos)
-    #sys.stderr.write("\n----------------------\n")
+    sys.stderr.write("-----SRILM output-----\n")
+    sys.stderr.write(srilm_pos)
+    sys.stderr.write("\n----------------------\n")
     
     # 3a) preprocessBeforeBama > temp4.txt 
     # 3) Run BAMA again now with the tags (vad är det för skillnad mot 1? temp0 och temp4 är likadana. temp1 och temp5 är lite olika, men samma innehåll egentligen)
@@ -719,7 +727,10 @@ if len(sys.argv) > 1 and sys.argv[1] == "server":
     def voc():
         ar_text = request.args.get('text', '')
         print "INPUT TEXT:", ar_text
-        return vocalise(ar_text)
+        res = []
+        for ar_sent in ar_text.split("."):
+            res.append(vocalise(ar_sent.strip()))
+        return ". ".join(res)
 
     if __name__ == "__main__":
         app.run(debug=True, port=8080)
