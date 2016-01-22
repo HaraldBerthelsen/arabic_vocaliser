@@ -216,7 +216,8 @@ def filterBamaWithTags(bama_pos, srilm_pos):
     taggedWords = srilm_pos.split(" ")
     i = 0
     res = []
-    while i < len(taggedBAMA):
+#    while i < len(taggedBAMA):
+    while i < len(taggedWords):
         options = taggedBAMA[i].strip().split("\n")
         pos = taggedWords[i]
 
