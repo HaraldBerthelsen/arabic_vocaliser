@@ -29,10 +29,40 @@ def runPyBama(ar_text):
         #print "RESULTS FOR %s: %s" % (bw_word, results)
         if len(results) > 0:
             for res in results:
+
+                print "RES:", res
+
                 res_lines = res.split("\n")
                 pos_line = res_lines[1].strip()
                 pos_line = re.sub("pos:\s+", "", pos_line)
                 bama_pos_list.append(pos_line)
+        bama_pos_list.append("") #word separator!
+
+    bama_pos = "\n".join(bama_pos_list)
+    return bama_pos
+
+#Todo: these two should be the same (= the second one), change following to allow
+#word+analysis in both cases
+def runPyBama2(ar_text):
+    bama_pos_list = []
+    for ar_word in ar_text.split(" "):
+        bw_word = ar2bw(ar_word)
+        bama_pos_list.append(bw_word)
+
+        results = pyaramorph.analyze(bw_word)
+        #print "RESULTS FOR %s: %s" % (bw_word, results)
+        if len(results) > 0:
+            for res in results:
+
+                print "RES:", res
+
+                res_lines = res.split("\n")
+                solution_line = res_lines[0].strip()
+                m = re.search(" ([^ \)]+)\)", solution_line)
+                vocalised_word = m.group(1)
+                pos_line = res_lines[1].strip()
+                pos_line = re.sub("pos:\s+", "", pos_line)
+                bama_pos_list.append(vocalised_word+" "+pos_line)
         bama_pos_list.append("") #word separator!
 
     bama_pos = "\n".join(bama_pos_list)
@@ -43,9 +73,10 @@ def convertBamaToSrilm(bama_pos):
     #TODO what does this regexp mean?? I have no example at the moment with multiple sentences
     sentences = re.split("\p{P}\¡\n", bama_pos)
     for sentence in sentences:
-        sys.stderr.write("SENTENCE: "+sentence+"\n")
+        #sys.stderr.write("SENTENCE: "+sentence+"\n")
         #Double newlines separate words
         words = sentence.split("\n\n")
+
         if len(words) > 0:
             result.append("<s> *noevent*\n")
             for word in words:
@@ -53,6 +84,9 @@ def convertBamaToSrilm(bama_pos):
                 #sys.stderr.write("WORD: "+word+"\n")
                 #newline separates readings
                 options = word.split("\n")
+
+                #The first is the unvocalised word (using runPyBama2)
+                options = options[1:]
 
                 tagList = convertBAMAtag(options)
 
@@ -75,8 +109,11 @@ def convertBAMAtag(options):
     optionsList = []
 
     for option in options:
-        sys.stderr.write("OPTION: "+option+"\n")
+        sys.stderr.write("OPTION: %s, type: %s\n" % (option, type(option)))
 
+        #using runPyBama2 there is "word analysis" in each, only the analysis is wanted here
+        if " " in option:
+            option = option.split(" ")[1]
 
         P = False
         N = False
@@ -155,7 +192,7 @@ def convertBAMAtag(options):
         else:
             optionsList.append("T")
 
-        sys.stderr.write("OPTIONSLIST: "+str(optionsList)+"\n")
+        #sys.stderr.write("OPTIONSLIST: "+str(optionsList)+"\n")
 
     if "A" in optionsList and not "P" in optionsList:
         optionsList.append("T")
@@ -216,7 +253,9 @@ def filterBamaWithTags(bama_pos, srilm_pos):
     taggedWords = srilm_pos.split(" ")
     i = 0
     res = []
-#    while i < len(taggedBAMA):
+
+    #Punctuation can affect this
+    #    while i < len(taggedBAMA):
     while i < len(taggedWords):
         options = taggedBAMA[i].strip().split("\n")
         pos = taggedWords[i]
@@ -602,7 +641,7 @@ def vocalise(ar_text):
 
     ar_text = preprocessBeforeBama(ar_text)
     #bama_pos = runBama(ar_text)
-    bama_pos = runPyBama(ar_text)
+    bama_pos = runPyBama2(ar_text)
     sys.stderr.write("------BAMA output-----\n")
     sys.stderr.write(bama_pos)
     sys.stderr.write("\n----------------------\n")
@@ -617,9 +656,9 @@ def vocalise(ar_text):
     # 2b) removeSentenceBoundaries > temp3.txt
     
     srilm_pos = convertBamaToSrilm(bama_pos)
-    sys.stderr.write("-----SRILM input------\n")
-    sys.stderr.write(srilm_pos)
-    sys.stderr.write("\n----------------------\n")
+    #sys.stderr.write("-----SRILM input------\n")
+    #sys.stderr.write(srilm_pos)
+    #sys.stderr.write("\n----------------------\n")
     
     srilm_pos = runSRILM(srilm_pos)
     #sys.stderr.write("-----SRILM output-----\n")
@@ -627,16 +666,24 @@ def vocalise(ar_text):
     #sys.stderr.write("\n----------------------\n")
     
     srilm_pos = removeSentenceBoundaries(srilm_pos)
-    sys.stderr.write("-----SRILM output-----\n")
-    sys.stderr.write(srilm_pos)
-    sys.stderr.write("\n----------------------\n")
+    #sys.stderr.write("-----SRILM output-----\n")
+    #sys.stderr.write(srilm_pos)
+    #sys.stderr.write("\n----------------------\n")
     
     # 3a) preprocessBeforeBama > temp4.txt 
     # 3) Run BAMA again now with the tags (vad är det för skillnad mot 1? temp0 och temp4 är likadana. temp1 och temp5 är lite olika, men samma innehåll egentligen)
     # aramorphWithTags.sh temp4.txt temp5.txt
     # 3b) temp5+temp3 > temp6 (behåll bara rätt tag enligt temp3)
     
-    bama_pos = runBamaWithTags(ar_text)
+    #HB I don't see an important difference between aramorph.pl and aramorphWithTags.pl?
+    #Trying to run the same again here. If it works, no need to run it twice?
+    #No, ok now, but clean it up TODO
+    #bama_pos = runBamaWithTags(ar_text)
+    #bama_pos = runPyBama2(ar_text)
+    sys.stderr.write("----- Bama output (2) -----\n")
+    sys.stderr.write(bama_pos)
+    sys.stderr.write("\n-------------------------\n")
+
     bama_filtered = filterBamaWithTags(bama_pos, srilm_pos)
     sys.stderr.write("-----Filtered output-----\n")
     sys.stderr.write(bama_filtered)
