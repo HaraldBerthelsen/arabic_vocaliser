@@ -435,7 +435,9 @@ def bw2ar(bw):
 
     ar_list = []
     for c in bw:
-        if c in transliterate:
+        if re.match("[0-9]", c):
+            ar_list.append(c)
+        elif c in transliterate:
             ar_list.append(transliterate[c])
         else:
             sys.stderr.write("WARNING: bw2ar %s not found, replacing with comma\n" % c)
@@ -448,7 +450,9 @@ def bw2ar(bw):
 def ar2bw(ar):
     bw_list = []
     for c in ar:
-        if c in ar2bw_map:
+        if re.match("[0-9]", c):
+            bw_list.append(c)
+        elif c in ar2bw_map:
             bw_list.append(ar2bw_map[c])
         else:
             sys.stderr.write("WARNING: ar2bw %s not found\n" % c)
@@ -727,6 +731,8 @@ if len(sys.argv) > 1 and sys.argv[1] == "server":
     def voc():
         ar_text = request.args.get('text', '')
         print "INPUT TEXT:", ar_text
+        if "o" in ar_text:
+            return ar_text
         res = []
         for ar_sent in ar_text.split("."):
             res.append(vocalise(ar_sent.strip()))
