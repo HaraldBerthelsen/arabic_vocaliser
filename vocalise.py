@@ -365,6 +365,9 @@ def filterBamaWithTags(bama_pos, srilm_pos):
 
 transliterate = {}
 
+#transliterate["{"] = u"ا" #//letter hamza al wasel
+
+
 transliterate["'"] = u"ء"
 transliterate["|"] = u"آ"
 transliterate[">"] = u"أ"
@@ -406,7 +409,6 @@ transliterate["J"] = u"ج"
 transliterate["V"] = u"ف"
 transliterate["G"] = u"ق"
 
-#transliterate["{"] = u"ا" #//letter hamza al wasel
 transliterate["_"] = u""#//not a letter
 
 transliterate["F"] = u"ً" #an
