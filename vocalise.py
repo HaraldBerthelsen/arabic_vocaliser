@@ -455,7 +455,9 @@ def ar2bw(ar):
         elif c in ar2bw_map:
             bw_list.append(ar2bw_map[c])
         else:
-            sys.stderr.write("WARNING: ar2bw %s not found\n" % c)
+            sys.stderr.write("WARNING: ar2bw %s not found, replacing with comma\n" % c)
+            bw_list.append(",")
+
     bw = "".join(bw_list)
     #sys.stderr.write("ar2bw: %s -> %s\n" % (ar,bw))
     return bw
