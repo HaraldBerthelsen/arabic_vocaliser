@@ -4,6 +4,8 @@ from pyaramorph.pyaramorph import Analyzer
 pyaramorph = Analyzer()
 
 def preprocessBeforeBama(ar_text):
+    ar_text = re.sub("([().,])", r" \1 ", ar_text)
+    ar_text = re.sub("\s+", " ", ar_text)
     return ar_text
 
 def runBama(ar_text):
@@ -47,6 +49,12 @@ def runPyBama2(ar_text):
     bama_pos_list = []
     for ar_word in ar_text.split(" "):
         bw_word = ar2bw(ar_word)
+
+        #Remove any diacritics before bama lookup
+        bw_word = re.sub("[FNKauio~]", "", bw_word)
+        print "bw_word:", bw_word
+
+
         bama_pos_list.append(bw_word)
 
         results = pyaramorph.analyze(bw_word)
@@ -67,6 +75,111 @@ def runPyBama2(ar_text):
 
     bama_pos = "\n".join(bama_pos_list)
     return bama_pos
+
+
+def filterWithPreVocalised(ar_text, bama_pos):
+
+    ar_words = ar_text.split(" ")
+
+
+    sentences = re.split("\p{P}\¡\n", bama_pos)
+    newSentences = []
+    for sentence in sentences:
+        #sys.stderr.write("SENTENCE: "+sentence+"\n")
+        #Double newlines separate words
+        words = sentence.split("\n\n")
+        newWords = []
+
+        i = 0
+        while i < len(ar_words):
+            ar_word = ar_words[i]
+            word = words[i]
+
+            options = word.strip().split("\n")
+            unvocWord = options[0]
+            options = options[1:]
+            newOptions = [unvocWord]
+            for option in options:
+                #print "OPTION:", option
+                solution = option.split(" ")[0]
+                if matchVocalisation(ar_word, solution):
+                    newOptions.append(option)
+            newWord = "\n".join(newOptions)
+            newWords.append(newWord)
+            i += 1
+        newSentences.append("\n\n".join(newWords))
+    return "\p{P}\¡\n".join(newSentences)
+
+def matchVocalisationOLD(ar_word, solution):
+    #doesn't work in a case like "sa" "s", they will match
+    bw_word = ar2bw(ar_word)
+    print "matchVocalisation", bw_word, solution,
+    if not re.search("[FNKauio~]", bw_word):
+        print "True"
+        return True
+    else:
+        i = 0
+        j = 0
+        while i < len(solution) and j < len(bw_word):
+            cs = solution[i]
+            cw = bw_word[j]
+            #print "Matching:", cw, cs
+            if cw == cs:
+                i += 1
+                j += 1
+            elif i+1 < len(solution) and cs in "FNKauio" and solution[i+1] == cw:
+                i += 2
+                j += 1
+            elif i+2 < len(solution) and cs == "~" and solution[i+1] in "FNKauio" and solution[i+2] == cw:
+                i += 3
+                j += 1
+            else:            
+                print "False"
+                return False
+        print "True"
+        return True
+
+def matchVocalisation(ar_word, solution):
+    bw_word = ar2bw(ar_word)
+    print "matchVocalisation", bw_word, solution,
+    if not re.search("[FNKauio~]", bw_word):
+        print "True"
+        return True
+    else:
+        s_rest = solution
+        w_rest = bw_word
+
+        while s_rest != "":
+            w_m = re.match("^(%s)(%s?)(%s?)(.*)$" % (".","~","[FNKauio]"), w_rest)
+            w_letter = w_m.group(1)
+            w_shadda = w_m.group(2)
+            w_voc = w_m.group(3)
+            w_rest = w_m.group(4)
+
+            print "1 Trying %s, %s, %s with %s" % (w_letter,w_shadda,w_voc, s_rest)
+
+
+            s_m = re.match(r"^(%s%s%s)(.*)$" % (w_letter, w_shadda, w_voc), s_rest)
+            if not s_m:
+                print "False"
+                return False                    
+            else:
+                if w_voc != "":
+                    print "1 %s%s%s matches %s" % (w_letter,w_shadda,w_voc,s_m.group(1))
+                    s_rest = s_m.group(2)
+                else:
+                    print "2 Trying %s, %s with %s" % (w_letter, "[FNKauio]", s_rest)
+                    s_m2 = re.match("^(%s%s)(.*)$" % (w_letter, "([FNKauio]?)"), s_rest)                    
+
+                    print "2 %s%s%s matches %s" % (w_letter,w_shadda,w_voc,s_m2.group(1))
+                    s_rest = s_m2.group(3)
+                    print "rest:", s_rest
+
+
+        print "True"
+        return True
+            
+
 
 def convertBamaToSrilm(bama_pos):
     result = []
@@ -465,7 +578,12 @@ def ar2bw(ar):
     return bw
 
 
-def createBAMAMap(bama_filtered):
+def createBAMAMap(bama_filtered, ar_text):
+
+    bw_words = []
+    for ar_word in ar_text.split(" "):
+        bw_words.append(ar2bw(ar_word))
+
 
     
     ar_list = []
@@ -482,7 +600,12 @@ def createBAMAMap(bama_filtered):
     res.append("<s> *noevent*")
 
     entries = text.split("\n\n")
-    for entry in entries:
+    e = 0
+    while e < len(entries):
+        entry = entries[e]
+        bw_word = bw_words[e]
+        e += 1
+
         options = entry.split("\n")
         #options[0] is the unvocalised input, the rest are vocalised alternatives
         unvoc = options[0]
@@ -494,18 +617,32 @@ def createBAMAMap(bama_filtered):
         #If there are no options, means that the word was not given
         #any analysis by BAMA.
         #Add all possible alternatives to every letter and hope for the best
+        #If there are any diacritics in the input text, use them!
         if len(options) == 0:
             i = 0
+            j = 1
             while i < len(unvoc):
                 char = unvoc[i]
                 alt = alts[i]
-                if char in ["A"]:
+
+                #If there is shadda+other diacritic in the input
+                if j+1 < len(bw_word) and bw_word[j] == "~" and bw_word[j+1] in "FNKauio":
+                    diacritics = ["~"+bw_word[j+1]]
+                    j += 2
+
+                #If there is a diacritic in the input
+                elif j < len(bw_word) and bw_word[j] in "FNKauio~":
+                    diacritics = [bw_word[j]]
+                    j += 1
+                    
+                elif char in ["A"]:
                     diacritics = ["None"]
                 else:
                     diacritics = ["None", "F", "N", "K", "a", "u", "i", "o", "~a", "~u", "~i"]
                 for diacritic in diacritics:
                     alt.append(diacritic)
                 i += 1
+                j += 1
 
         for option in options:
             #sys.stderr.write(unvoc+" "+option+"\n")
@@ -663,6 +800,11 @@ def vocalise(ar_text):
     sys.stderr.write("\n----------------------\n")
 
 
+    bama_pos = filterWithPreVocalised(ar_text, bama_pos)
+    sys.stderr.write("---- After filtering ---\n")
+    sys.stderr.write(bama_pos)
+    sys.stderr.write("\n----------------------\n")
+
     #sys.exit()
 
 
@@ -712,7 +854,7 @@ def vocalise(ar_text):
     # 4b) mergeOutput (rensar utdata på taggar osv så bara vokaliserad text blir kvar)
     # > temp9
     
-    bama_map = createBAMAMap(bama_filtered)
+    bama_map = createBAMAMap(bama_filtered, ar_text)
     sys.stderr.write("----- Srilm input   -----\n")
     sys.stderr.write(bama_map)
     sys.stderr.write("\n-------------------------\n")
@@ -735,8 +877,8 @@ if len(sys.argv) > 1 and sys.argv[1] == "server":
     def voc():
         ar_text = request.args.get('text', '')
         print "INPUT TEXT:", ar_text
-        if "o" in ar_text:
-            return ar_text
+#        if "o" in ar_text:
+#            return ar_text
         res = []
         for ar_sent in ar_text.split("."):
             res.append(vocalise(ar_sent.strip()))
