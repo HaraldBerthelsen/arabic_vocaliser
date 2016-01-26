@@ -169,7 +169,7 @@ def matchVocalisation(ar_word, solution):
                     s_rest = s_m.group(2)
                 else:
                     print "2 Trying %s, %s with %s" % (w_letter, "[FNKauio]", s_rest)
-                    s_m2 = re.match("^(%s%s)(.*)$" % (w_letter, "([FNKauio]?)"), s_rest)                    
+                    s_m2 = re.match("^(%s%s)(.*)$" % (w_letter, "(~?[FNKauio]?)"), s_rest)                    
 
                     print "2 %s%s%s matches %s" % (w_letter,w_shadda,w_voc,s_m2.group(1))
                     s_rest = s_m2.group(3)
