@@ -149,14 +149,21 @@ def matchVocalisation(ar_word, solution):
         s_rest = solution
         w_rest = bw_word
 
+        #normalise order of shadda+other diacritic, shadda should come first! example is التاريخيَّة
+        #where it doesn't (taken from web page): bw AltAryxya~p
+        w_rest = re.sub("([FNKauio])(~)",r"\2\1",w_rest)
+
+
         while s_rest != "":
-            w_m = re.match("^(%s)(%s?)(%s?)(.*)$" % (".","~","[FNKauio]"), w_rest)
+            w_m = re.match(r"^(.)(~?)(%s?)(.*)$" % "[FNKauio]", w_rest)
             w_letter = w_m.group(1)
             w_shadda = w_m.group(2)
             w_voc = w_m.group(3)
+
+            print "1 Trying %s, %s, %s from %s with %s" % (w_letter,w_shadda,w_voc, w_rest, s_rest)
+
             w_rest = w_m.group(4)
 
-            print "1 Trying %s, %s, %s with %s" % (w_letter,w_shadda,w_voc, s_rest)
 
 
             s_m = re.match(r"^(%s%s%s)(.*)$" % (w_letter, w_shadda, w_voc), s_rest)
