@@ -485,7 +485,8 @@ def filterBamaWithTags(bama_pos, srilm_pos):
 
 transliterate = {}
 
-#transliterate["{"] = u"ا" #//letter hamza al wasel
+transliterate["{"] = u"ا" #//letter hamza al wasel
+transliterate["`"] = u"ا" #//backtick is used in pyaramorph/dictStems in h*A, not sure how to represent that..
 
 
 transliterate["'"] = u"ء"
@@ -547,11 +548,6 @@ for bw in transliterate.keys():
     #print "%s -> %s" % (ar, bw)
     ar2bw_map[ar] = bw
 
-#?? ar2bw_map["."] = "."
-
-if u"ك" not in ar2bw_map:
-    print "aaaaaaaaaaaaaaaaaaaaaaaaa"
-    sys.exit()
 
 def bw2ar(bw):
 
