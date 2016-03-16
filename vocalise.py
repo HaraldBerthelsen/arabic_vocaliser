@@ -6,7 +6,31 @@ pyaramorph = Analyzer()
 def preprocessBeforeBama(ar_text):
     ar_text = re.sub("([().,])", r" \1 ", ar_text)
     ar_text = re.sub("\s+", " ", ar_text)
+
+
+    #normalise order of shadda+other diacritic, shadda should come first! example is التاريخيَّة
+    #where it doesn't (taken from web page): bw AltAryxya~p
+    #ar_text = re.sub("([FNKauio])(~)",r"\2\1",ar_text)
+    
+    #debugPrintChars(ar_text)
+    if re.search(u"ّ", ar_text):
+        #print("Found shadda")
+        ar_text2 = re.sub(u"([ًٌٍََُِْ])(ّ)",r"\2\1",ar_text)
+        #debugPrintChars(ar_text2)
+        if ar_text != ar_text2:
+            print("Normalised order of diacritic+shadda")
+            ar_text = ar_text2
+    #sys.exit()
+
     return ar_text
+
+
+def debugPrintChars(text):
+    i = 0
+    for char in text:
+        i += 1
+        print("%d: %s" % (i, char))
+
 
 def runBama(ar_text):
     #Has to be windows-1256 for BAMA?
@@ -796,6 +820,10 @@ def vocalise(ar_text):
     # aramorph.sh temp0.txt temp1.txt
 
     ar_text = preprocessBeforeBama(ar_text)
+    sys.stderr.write("------Preprocessed-----\n")
+    sys.stderr.write(ar_text)
+    sys.stderr.write("\n----------------------\n")
+
     #bama_pos = runBama(ar_text)
     bama_pos = runPyBama2(ar_text)
     sys.stderr.write("------BAMA output-----\n")
