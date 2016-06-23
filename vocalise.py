@@ -509,8 +509,8 @@ def filterBamaWithTags(bama_pos, srilm_pos):
 
 transliterate = {}
 
-transliterate["{"] = u"ا" #//letter hamza al wasel
-transliterate["`"] = u"ا" #//backtick is used in pyaramorph/dictStems in h*A, not sure how to represent that..
+transliterate["{"] = u"ٱ" #//letter hamza al wasel
+transliterate["`"] = u"ٰ" #//backtick is used in pyaramorph/dictStems in h*A, not sure how to represent that..
 
 
 transliterate["'"] = u"ء"
